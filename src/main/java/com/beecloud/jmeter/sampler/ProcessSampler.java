@@ -164,30 +164,15 @@ public class ProcessSampler extends AbstractSampler implements TestStateListener
     @Override
     public SampleResult sample(Entry entry) {
         final SampleResult result = new SampleResult();
-        result.setSampleLabel(Constants.MQTT_SUBSCRIBER_TITLE);
+        result.setSampleLabel(Constants.MQTT_PROCESS_TITLE);
         result.sampleStart();
+        long start = System.currentTimeMillis();
         if (processClient == null || !processClient.isConnect()) {
             try {
                 initClient();
                 processClient.Connect();
                 processClient.subscribeTbox();
                 processClient.subscribeApp();
-                boolean isCompleted = false;
-                long start = System.currentTimeMillis();
-                while (!isCompleted){
-                    if(System.currentTimeMillis()-start>1000*10){
-                        result.setSuccessful(false);
-                        result.sampleEnd();
-                        result.setResponseCode("TIMEOUT");
-                        isCompleted = true;
-                    }
-                    if(processClient.isCompleted()){
-                        result.setSuccessful(true);
-                        result.sampleEnd();
-                        result.setResponseCode("OK");
-                        isCompleted = true;
-                    }
-                }
             } catch (Exception e) {
                 result.sampleEnd();
                 result.setSuccessful(false);
@@ -200,6 +185,23 @@ public class ProcessSampler extends AbstractSampler implements TestStateListener
                 return result;
             }
         }
-        return null;
+
+        while (true){
+            if(!processClient.isCompleted()){
+                if(System.currentTimeMillis()-start>1000*10){
+                    result.setSuccessful(false);
+                    result.sampleEnd();
+                    result.setResponseCode("TIMEOUT");
+                    return result;
+                }else{
+                    continue;
+                }
+            }else{
+                result.setSuccessful(true);
+                result.sampleEnd();
+                result.setResponseCode("OK");
+                return result;
+            }
+        }
     }
 }

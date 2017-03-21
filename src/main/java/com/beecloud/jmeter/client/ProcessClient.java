@@ -9,7 +9,6 @@ import com.beecloud.platform.protocol.core.datagram.BaseDataGram;
 import com.beecloud.platform.protocol.core.element.Identity;
 import com.beecloud.platform.protocol.core.header.ApplicationHeader;
 import com.beecloud.platform.protocol.core.message.BaseMessage;
-import com.google.gson.Gson;
 import org.apache.log.util.Closeable;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
@@ -28,7 +27,7 @@ public class ProcessClient implements MqttCallback,Closeable{
     private String mqtt_server_topic = "mqtt/server";
 	private String tbox_topic = "  mqtt/vehicle/%s";
 	private ConnectInfo connectInfo;
-    private boolean isOver = false;
+	private boolean isCompleted = false;
 	public ProcessClient(ConnectInfo connectInfo){
 		 this.connectInfo = connectInfo;
 	}
@@ -110,8 +109,6 @@ public class ProcessClient implements MqttCallback,Closeable{
 	 * @param baseMessage
      */
 	public void publish(BaseMessage baseMessage){
-		Gson gson = new Gson();
-		System.out.println(gson.toJson(baseMessage));
 		BaseDataGram baseDataGram = new BaseDataGram();
 		baseDataGram.addMessage(baseMessage);
 		MqttMessage msg = new MqttMessage();
@@ -125,12 +122,8 @@ public class ProcessClient implements MqttCallback,Closeable{
 		}
 	}
 
-	/**
-	 * 判断是否已经回复Message
-	 * @return
-     */
 	public boolean isCompleted(){
-		return this.isOver;
+		return this.isCompleted;
 	}
 
 	@Override
@@ -141,6 +134,9 @@ public class ProcessClient implements MqttCallback,Closeable{
 	@Override
 	public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
 		System.out.println("receive Topic:"+s);
+		if(s.equals(connectInfo.getAppTopic())){
+			isCompleted = true;
+		}
 		BaseDataGram baseDataGram = new BaseDataGram(mqttMessage.getPayload());
 		List<BaseMessage> baseMessages = baseDataGram.getMessages();
 		BaseMessage baseMessage = baseMessages.get(0);
@@ -148,12 +144,7 @@ public class ProcessClient implements MqttCallback,Closeable{
 		ApplicationHeader applicationHeader = baseMessage.getApplicationHeader();
 		String name = applicationHeader.getApplicationID().name();
 		int stepId = applicationHeader.getStepId();
-		if(s.equals(connectInfo.getAppTopic())){
-			isOver = true;
-			return;
-		}
 		String key = name+stepId;
-		System.out.println(key);
 		if(!ActionMapper.hasKey(key)){
 			return;
 		}
@@ -176,7 +167,8 @@ public class ProcessClient implements MqttCallback,Closeable{
 	@Override
 	public void close(){
 		try {
-			client.disconnect();
+			IMqttToken iMqttToken = client.disconnect(null,null);
+			iMqttToken.waitForCompletion();
 		} catch (MqttException e) {
 			e.printStackTrace();
 		}
