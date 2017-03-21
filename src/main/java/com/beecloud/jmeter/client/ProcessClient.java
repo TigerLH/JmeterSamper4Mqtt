@@ -28,6 +28,7 @@ public class ProcessClient implements MqttCallback,Closeable{
 	private String tbox_topic = "  mqtt/vehicle/%s";
 	private ConnectInfo connectInfo;
 	private boolean isCompleted = false;
+	private String appMessage = "";
 	public ProcessClient(ConnectInfo connectInfo){
 		 this.connectInfo = connectInfo;
 	}
@@ -74,6 +75,10 @@ public class ProcessClient implements MqttCallback,Closeable{
 	}
 
 
+
+	public String getAppMessage(){
+		return this.appMessage;
+	}
     /**
 	 * 订阅消息
 	 * @throws MqttException
@@ -135,6 +140,7 @@ public class ProcessClient implements MqttCallback,Closeable{
 	public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
 		System.out.println("receive Topic:"+s);
 		if(s.equals(connectInfo.getAppTopic())){
+			appMessage = new String(mqttMessage.getPayload(),"UTF-8");
 			isCompleted = true;
 		}
 		BaseDataGram baseDataGram = new BaseDataGram(mqttMessage.getPayload());

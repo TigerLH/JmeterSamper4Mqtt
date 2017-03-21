@@ -200,6 +200,7 @@ public class ProcessSampler extends AbstractSampler implements TestStateListener
                 result.setSuccessful(true);
                 result.sampleEnd();
                 result.setResponseCode("OK");
+                result.setResponseData(processClient.getAppMessage(),"UTF-8");
                 return result;
             }
         }
