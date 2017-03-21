@@ -246,6 +246,8 @@ public class PublisherSampler extends AbstractSampler implements TestStateListen
                 result.setDataType(SampleResult.TEXT);
                 result.setResponseCode(Constants.RESULT_FAILED);
                 return result;
+            }finally {
+                publisherClient.close();
             }
     }
 }

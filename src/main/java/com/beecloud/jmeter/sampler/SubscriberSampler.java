@@ -178,6 +178,7 @@ public class SubscriberSampler extends AbstractSampler implements TestStateListe
                                 isCompleted = true;
                             }
                         }
+                        return result;
             } catch (Exception e) {
                 result.sampleEnd();
                 result.setSuccessful(false);
@@ -188,6 +189,8 @@ public class SubscriberSampler extends AbstractSampler implements TestStateListe
                 result.setDataType(org.apache.jmeter.samplers.SampleResult.TEXT);
                 result.setResponseCode("FAILED");
                 return result;
+            }finally {
+                subscirberClient.close();
             }
         }
         return null;
