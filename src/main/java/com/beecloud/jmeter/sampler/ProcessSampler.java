@@ -9,6 +9,7 @@ import org.apache.jmeter.samplers.AbstractSampler;
 import org.apache.jmeter.samplers.Entry;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestStateListener;
+import org.apache.jmeter.testelement.ThreadListener;
 import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -16,14 +17,13 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Date;
 
 /**
  * @author hong.lin
  * @description
  * @date 2017/3/7.
  */
-public class ProcessSampler extends AbstractSampler implements TestStateListener {
+public class ProcessSampler extends AbstractSampler implements TestStateListener,ThreadListener {
     private static final String BROKER_URL = "mqtt.process.broker.url";
     private static final String VEHICLE = "mqtt.process.vehicle";
     private static final String RETAINED = "mqtt.process.message.retained";
@@ -36,6 +36,7 @@ public class ProcessSampler extends AbstractSampler implements TestStateListener
 
     private static final Logger log = LoggingManager.getLoggerForClass();
     private ProcessClient processClient = null;
+    private Exception initException = null;
 
     public  String getBrokerUrl() {
         return getPropertyAsString(BROKER_URL);
@@ -138,12 +139,7 @@ public class ProcessSampler extends AbstractSampler implements TestStateListener
 
     @Override
     public void testStarted() {
-        if (log.isDebugEnabled()) {
-            log.debug("Thread started " + new Date());
-            log.debug("MQTT SubScriber Sampler: ["
-                    + Thread.currentThread().getName() + "], hashCode=["
-                    + hashCode() + "]");
-        }
+
     }
 
     @Override
@@ -163,10 +159,45 @@ public class ProcessSampler extends AbstractSampler implements TestStateListener
 
     @Override
     public SampleResult sample(Entry entry) {
-        final SampleResult result = new SampleResult();
+        SampleResult result = new SampleResult();
         result.setSampleLabel(Constants.MQTT_PROCESS_TITLE);
         result.sampleStart();
+        if(null != initException){
+            result.sampleEnd();
+            result.setSuccessful(false);
+            StringWriter stringWriter = new StringWriter();
+            initException.printStackTrace(new PrintWriter(stringWriter));
+            result.setResponseData(stringWriter.toString(), null);
+            result.setResponseMessage("Unable publish messages.\n" + "Exception: " + initException.toString());
+            result.setDataType(SampleResult.TEXT);
+            result.setResponseCode("FAILED");
+            return result;
+        }
         long start = System.currentTimeMillis();
+        while (true){
+            if(processClient.isCompleted()){
+                result.setSuccessful(true);
+                result.sampleEnd();
+                result.setResponseCode("OK");
+                result.setResponseData(processClient.getAppMessage(),"UTF-8");
+                return result;
+            }
+            if(System.currentTimeMillis()-start>1000*10){
+                result.setSuccessful(false);
+                result.sampleEnd();
+                result.setResponseCode("TIMEOUT");
+                return result;
+            }
+            try {
+                Thread.sleep(0);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void threadStarted() {
         if (processClient == null || !processClient.isConnect()) {
             try {
                 initClient();
@@ -174,35 +205,13 @@ public class ProcessSampler extends AbstractSampler implements TestStateListener
                 processClient.subscribeTbox();
                 processClient.subscribeApp();
             } catch (Exception e) {
-                result.sampleEnd();
-                result.setSuccessful(false);
-                StringWriter stringWriter = new StringWriter();
-                e.printStackTrace(new PrintWriter(stringWriter));
-                result.setResponseData(stringWriter.toString(), null);
-                result.setResponseMessage("Unable publish messages.\n" + "Exception: " + e.toString());
-                result.setDataType(SampleResult.TEXT);
-                result.setResponseCode("FAILED");
-                return result;
+                initException = e ;
             }
         }
+    }
 
-        while (true){
-            if(!processClient.isCompleted()){
-                if(System.currentTimeMillis()-start>1000*10){
-                    result.setSuccessful(false);
-                    result.sampleEnd();
-                    result.setResponseCode("TIMEOUT");
-                    return result;
-                }else{
-                    continue;
-                }
-            }else{
-                result.setSuccessful(true);
-                result.sampleEnd();
-                result.setResponseCode("OK");
-                result.setResponseData(processClient.getAppMessage(),"UTF-8");
-                return result;
-            }
-        }
+    @Override
+    public void threadFinished() {
+        processClient.close();
     }
 }

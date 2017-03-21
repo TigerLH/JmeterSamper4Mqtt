@@ -139,9 +139,11 @@ public class ProcessClient implements MqttCallback,Closeable{
 	@Override
 	public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
 		System.out.println("receive Topic:"+s);
+		System.out.println(s.equals(connectInfo.getAppTopic()));
 		if(s.equals(connectInfo.getAppTopic())){
 			appMessage = new String(mqttMessage.getPayload(),"UTF-8");
 			isCompleted = true;
+			return;
 		}
 		BaseDataGram baseDataGram = new BaseDataGram(mqttMessage.getPayload());
 		List<BaseMessage> baseMessages = baseDataGram.getMessages();
