@@ -1,7 +1,7 @@
 package com.beecloud.jmeter.gui;
 
 import com.beecloud.jmeter.constants.Constants;
-import com.beecloud.jmeter.sampler.SubscriberSampler;
+import com.beecloud.jmeter.sampler.ProcessSampler;
 import org.apache.jmeter.gui.util.JLabeledRadioI18N;
 import org.apache.jmeter.gui.util.VerticalPanel;
 import org.apache.jmeter.samplers.gui.AbstractSamplerGui;
@@ -17,13 +17,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 
-public class MQTTSubscriberGui extends AbstractSamplerGui implements ChangeListener, ActionListener {
+public class MQTTProcessGui extends AbstractSamplerGui implements ChangeListener, ActionListener {
 
     private static final long serialVersionUID = 240L;
 
     private final JLabeledTextField brokerUrlField = new JLabeledTextField(Constants.MQTT_PROVIDER_URL);
 
     private final JLabeledTextField vehicleInfo = new JLabeledTextField(Constants.MQTT_VEHICLE);
+    private final JLabeledTextField appTopic = new JLabeledTextField(Constants.MQTT_APP_TOPIC);
 
     private final JCheckBox retained = new JCheckBox(Constants.MQTT_SEND_AS_RETAINED_MSG, false);
 
@@ -39,7 +40,7 @@ public class MQTTSubscriberGui extends AbstractSamplerGui implements ChangeListe
 
 
 
-    public MQTTSubscriberGui() {
+    public MQTTProcessGui() {
         initWindow();
     }
 
@@ -50,7 +51,7 @@ public class MQTTSubscriberGui extends AbstractSamplerGui implements ChangeListe
 
     @Override
     public String getStaticLabel() {
-        return Constants.MQTT_SUBSCRIBER_TITLE;
+        return Constants.MQTT_PROCESS_TITLE;
     }
 
 
@@ -59,7 +60,7 @@ public class MQTTSubscriberGui extends AbstractSamplerGui implements ChangeListe
      * */
     @Override
     public TestElement createTestElement() {
-        TestElement sampler = new SubscriberSampler();
+        TestElement sampler = new ProcessSampler();
         modifyTestElement(sampler);
         return sampler;
     }
@@ -70,7 +71,7 @@ public class MQTTSubscriberGui extends AbstractSamplerGui implements ChangeListe
     @Override
     public void configure(TestElement el) {
         super.configure(el);
-        SubscriberSampler sampler = (SubscriberSampler) el;
+        ProcessSampler sampler = (ProcessSampler) el;
         brokerUrlField.setText(sampler.getBrokerUrl());
         vehicleInfo.setText(sampler.getVehicle());
         retained.setSelected(sampler.getRetained());
@@ -78,6 +79,7 @@ public class MQTTSubscriberGui extends AbstractSamplerGui implements ChangeListe
         mqttKeepAlive.setText(Integer.toString(sampler.getKeepAlive()));
         mqttUser.setText(sampler.getUsername());
         mqttPwd.setText(sampler.getPassword());
+        appTopic.setText(sampler.getAppTopic());
     }
 
 
@@ -86,10 +88,11 @@ public class MQTTSubscriberGui extends AbstractSamplerGui implements ChangeListe
      * */
     @Override
     public void modifyTestElement(TestElement testElement) {
-        SubscriberSampler sampler = (SubscriberSampler)testElement;
+        ProcessSampler sampler = (ProcessSampler)testElement;
         super.configureTestElement(sampler);
         sampler.setBrokerUrl(brokerUrlField.getText());
         sampler.setVehicle(vehicleInfo.getText());
+        sampler.setAppTopic(appTopic.getText());
         sampler.setUsername(mqttUser.getText());
         sampler.setPassword(mqttPwd.getText());
         sampler.setRetained(retained.isSelected());
@@ -112,7 +115,8 @@ public class MQTTSubscriberGui extends AbstractSamplerGui implements ChangeListe
         DPanel.add(brokerUrlField);
         JPanel ControlPanel = new VerticalPanel();
         ControlPanel.add(DPanel);
-        ControlPanel.add(createDestinationPane());
+        ControlPanel.add(createVehiclePane());
+        ControlPanel.add(createAppPane());
         ControlPanel.add(retained);
         ControlPanel.add(cleanSession);
         ControlPanel.add(createKeepAlivePane());
@@ -172,10 +176,21 @@ public class MQTTSubscriberGui extends AbstractSamplerGui implements ChangeListe
     }
 
 
-    private JPanel createDestinationPane() {
+    private JPanel createVehiclePane() {
         JPanel panel = new VerticalPanel(); //new BorderLayout(3, 0)
         this.vehicleInfo.setLayout((new BoxLayout(vehicleInfo, BoxLayout.X_AXIS)));
         panel.add(vehicleInfo);
+        JPanel TPanel = new JPanel();
+        TPanel.setLayout(new BoxLayout(TPanel, BoxLayout.X_AXIS));
+        TPanel.add(Box.createHorizontalStrut(100));
+        panel.add(TPanel);
+        return panel;
+    }
+
+    private JPanel createAppPane() {
+        JPanel panel = new VerticalPanel(); //new BorderLayout(3, 0)
+        this.appTopic.setLayout((new BoxLayout(appTopic, BoxLayout.X_AXIS)));
+        panel.add(appTopic);
         JPanel TPanel = new JPanel();
         TPanel.setLayout(new BoxLayout(TPanel, BoxLayout.X_AXIS));
         TPanel.add(Box.createHorizontalStrut(100));

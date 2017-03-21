@@ -1,6 +1,6 @@
 package com.beecloud.jmeter.sampler;
 
-import com.beecloud.jmeter.client.SubscriberClient;
+import com.beecloud.jmeter.client.ProcessClient;
 import com.beecloud.jmeter.constants.Constants;
 import com.beecloud.jmeter.objects.AuthObject;
 import com.beecloud.jmeter.objects.ConnectInfo;
@@ -23,18 +23,19 @@ import java.util.Date;
  * @description
  * @date 2017/3/7.
  */
-public class SubscriberSampler extends AbstractSampler implements TestStateListener {
-    private static final String BROKER_URL = "mqtt.subscriber.broker.url";
-    private static final String VEHICLE = "mqtt.subscriber.vehicle";
-    private static final String RETAINED = "mqtt.subscriber.message.retained";
-    private static final String CLEAN_SESSION = "mqtt.subscriber.clean.session";
-    private static final String USERNAME = "mqtt.subscriber.auth.username";
-    private static final String PASSWORD = "mqtt.subscriber.auth.password";
-    private static final String KEEP_ALIVE = "mqtt.subscriber.keep.alive";
-    private static final String QOS = "mqtt.subscriber.qos";
+public class ProcessSampler extends AbstractSampler implements TestStateListener {
+    private static final String BROKER_URL = "mqtt.process.broker.url";
+    private static final String VEHICLE = "mqtt.process.vehicle";
+    private static final String RETAINED = "mqtt.process.message.retained";
+    private static final String CLEAN_SESSION = "mqtt.process.clean.session";
+    private static final String USERNAME = "mqtt.process.auth.username";
+    private static final String PASSWORD = "mqtt.process.auth.password";
+    private static final String KEEP_ALIVE = "mqtt.process.keep.alive";
+    private static final String APP_TOPIC = "mqtt.process.app.topic";
+    private static final String QOS = "mqtt.process.qos";
 
     private static final Logger log = LoggingManager.getLoggerForClass();
-    private SubscriberClient subscirberClient = null;
+    private ProcessClient processClient = null;
 
     public  String getBrokerUrl() {
         return getPropertyAsString(BROKER_URL);
@@ -91,6 +92,14 @@ public class SubscriberSampler extends AbstractSampler implements TestStateListe
         setProperty(KEEP_ALIVE,keepAlive);
     }
 
+    public void setAppTopic(String topic){
+        setProperty(APP_TOPIC,topic);
+    }
+
+    public String getAppTopic(){
+        return getPropertyAsString(APP_TOPIC);
+    }
+
     public  int getQos() {
         return getPropertyAsInt(QOS);
     }
@@ -117,11 +126,12 @@ public class SubscriberSampler extends AbstractSampler implements TestStateListe
         connectInfo.setUserName(getUsername());
         connectInfo.setPassword(getPassword());
         connectInfo.setKeepAlive(getKeepAlive());
+        connectInfo.setAppTopic(getAppTopic());
         Gson gson = new Gson();
         AuthObject authObject = gson.fromJson(getVehicle() ,AuthObject.class);
         connectInfo.setAuthObject(authObject);
         System.out.println(connectInfo);
-        subscirberClient = new SubscriberClient(connectInfo);
+        processClient = new ProcessClient(connectInfo);
     }
 
 
@@ -156,28 +166,28 @@ public class SubscriberSampler extends AbstractSampler implements TestStateListe
         final SampleResult result = new SampleResult();
         result.setSampleLabel(Constants.MQTT_SUBSCRIBER_TITLE);
         result.sampleStart();
-        if (subscirberClient == null || !subscirberClient.isConnect()) {
+        if (processClient == null || !processClient.isConnect()) {
             try {
                 initClient();
-                subscirberClient.Connect();
-                subscirberClient.subscribe();
-                        boolean isCompleted = false;
-                        long start = System.currentTimeMillis();
-                        while (!isCompleted){
-                            if(System.currentTimeMillis()-start>1000*10){
-                                result.setSuccessful(false);
-                                result.sampleEnd();
-                                result.setResponseCode("TIMEOUT");
-                                isCompleted = true;
-                            }
-
-                            if(subscirberClient.isCompleted()){
-                                result.setSuccessful(true);
-                                result.sampleEnd();
-                                result.setResponseCode("OK");
-                                isCompleted = true;
-                            }
-                        }
+                processClient.Connect();
+                processClient.subscribeTbox();
+                processClient.subscribeApp();
+                boolean isCompleted = false;
+                long start = System.currentTimeMillis();
+                while (!isCompleted){
+                    if(System.currentTimeMillis()-start>1000*10){
+                        result.setSuccessful(false);
+                        result.sampleEnd();
+                        result.setResponseCode("TIMEOUT");
+                        isCompleted = true;
+                    }
+                    if(processClient.isCompleted()){
+                        result.setSuccessful(true);
+                        result.sampleEnd();
+                        result.setResponseCode("OK");
+                        isCompleted = true;
+                    }
+                }
             } catch (Exception e) {
                 result.sampleEnd();
                 result.setSuccessful(false);
@@ -185,7 +195,7 @@ public class SubscriberSampler extends AbstractSampler implements TestStateListe
                 e.printStackTrace(new PrintWriter(stringWriter));
                 result.setResponseData(stringWriter.toString(), null);
                 result.setResponseMessage("Unable publish messages.\n" + "Exception: " + e.toString());
-                result.setDataType(org.apache.jmeter.samplers.SampleResult.TEXT);
+                result.setDataType(SampleResult.TEXT);
                 result.setResponseCode("FAILED");
                 return result;
             }

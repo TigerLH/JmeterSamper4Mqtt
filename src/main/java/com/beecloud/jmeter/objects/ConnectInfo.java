@@ -10,6 +10,7 @@ public class ConnectInfo {
     private String userName;
     private String password;
     private AuthObject authObject;
+    private String appTopic;
     private boolean cleanSession;
     private int keepAlive;
     private int qos;
@@ -77,6 +78,14 @@ public class ConnectInfo {
 
     public void setRetain(boolean retain) {
         isRetain = retain;
+    }
+
+    public String getAppTopic() {
+        return appTopic;
+    }
+
+    public void setAppTopic(String appTopic) {
+        this.appTopic = appTopic;
     }
 
     @Override

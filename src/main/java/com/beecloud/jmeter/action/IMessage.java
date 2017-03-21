@@ -1,5 +1,6 @@
 package com.beecloud.jmeter.action;
 
+import com.beecloud.platform.protocol.core.element.Identity;
 import com.beecloud.platform.protocol.core.message.BaseMessage;
 
 /**
@@ -8,6 +9,6 @@ import com.beecloud.platform.protocol.core.message.BaseMessage;
  * @date 2017/3/6.
  */
 public interface IMessage {
-    BaseMessage produceAckMessage();
-    BaseMessage produceResultMessage();
+    BaseMessage produceAckMessage(long sequenceId, Identity identity);
+    BaseMessage produceResultMessage(long sequenceId,Identity identity);
 }

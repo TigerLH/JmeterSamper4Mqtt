@@ -17,7 +17,9 @@ public  class Constants {
     public static final String MQTT_PUBLISHER_TITLE = "BeeCloud MQTT Publisher";
     public static final String MQTT_SEND_AS_RETAINED_MSG = "Retained";
     public static final String MQTT_SUBSCRIBER_TITLE = "BeeCloud MQTT Subscriber";
+    public static final String MQTT_PROCESS_TITLE = "BeeCloud MQTT Process";
     public static final String MQTT_VEHICLE = "Vehicle";
+    public static final String MQTT_APP_TOPIC = "App Topic";
     public static final String MQTT_URL_DEFAULT = "tcp://10.28.4.76:1883";
     public static final String MQTT_USER_PASSWORD = "";
     public static final String MQTT_USER_USERNAME = "";

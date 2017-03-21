@@ -23,13 +23,13 @@ import java.util.List;
  * @description
  * @date 2017/3/6.
  */
-public class SubscriberClient implements MqttCallback,Closeable{
+public class ProcessClient implements MqttCallback,Closeable{
 	private MqttAsyncClient client = null;
     private String mqtt_server_topic = "mqtt/server";
 	private String tbox_topic = "  mqtt/vehicle/%s";
 	private ConnectInfo connectInfo;
     private boolean isOver = false;
-	public SubscriberClient(ConnectInfo connectInfo){
+	public ProcessClient(ConnectInfo connectInfo){
 		 this.connectInfo = connectInfo;
 	}
 
@@ -79,8 +79,24 @@ public class SubscriberClient implements MqttCallback,Closeable{
 	 * 订阅消息
 	 * @throws MqttException
      */
-	public void subscribe() throws MqttException {
+	public void subscribeTbox() throws MqttException {
+		if("".equals(connectInfo.getAuthObject())){
+			return;
+		}
 		IMqttToken iMqttToken = client.subscribe(String.format(tbox_topic,connectInfo.getAuthObject().getVin()).trim(),connectInfo.getQos());
+		iMqttToken.waitForCompletion();
+	}
+
+
+    /**
+	 * 订阅App消息
+	 * @throws MqttException
+     */
+	public void subscribeApp() throws MqttException {
+		if("".equals(connectInfo.getAppTopic())){
+			return;
+		}
+		IMqttToken iMqttToken = client.subscribe(connectInfo.getAppTopic().trim(),connectInfo.getQos());
 		iMqttToken.waitForCompletion();
 	}
 
@@ -132,7 +148,12 @@ public class SubscriberClient implements MqttCallback,Closeable{
 		ApplicationHeader applicationHeader = baseMessage.getApplicationHeader();
 		String name = applicationHeader.getApplicationID().name();
 		int stepId = applicationHeader.getStepId();
+		if(s.equals(connectInfo.getAppTopic())){
+			isOver = true;
+			return;
+		}
 		String key = name+stepId;
+		System.out.println(key);
 		if(!ActionMapper.hasKey(key)){
 			return;
 		}
@@ -144,7 +165,6 @@ public class SubscriberClient implements MqttCallback,Closeable{
 		BaseMessage resultMessage = ActionMapper.getMessage(key).produceResultMessage(sequenceId,identity);
 		this.publish(ackMessage);
 		this.publish(resultMessage);
-		isOver = true;
 	}
 
 
