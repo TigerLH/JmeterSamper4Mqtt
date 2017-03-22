@@ -9,6 +9,7 @@ import org.apache.jmeter.samplers.AbstractSampler;
 import org.apache.jmeter.samplers.Entry;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestStateListener;
+import org.apache.jmeter.testelement.ThreadListener;
 import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -23,7 +24,7 @@ import java.util.Date;
  * @description
  * @date 2017/3/7.
  */
-public class SubscriberSampler extends AbstractSampler implements TestStateListener {
+public class SubscriberSampler extends AbstractSampler implements TestStateListener,ThreadListener {
     private static final String BROKER_URL = "mqtt.subscriber.broker.url";
     private static final String VEHICLE = "mqtt.subscriber.vehicle";
     private static final String RETAINED = "mqtt.subscriber.message.retained";
@@ -35,6 +36,7 @@ public class SubscriberSampler extends AbstractSampler implements TestStateListe
 
     private static final Logger log = LoggingManager.getLoggerForClass();
     private SubscriberClient subscirberClient = null;
+    private Exception initException = null;
 
     public  String getBrokerUrl() {
         return getPropertyAsString(BROKER_URL);
@@ -156,43 +158,55 @@ public class SubscriberSampler extends AbstractSampler implements TestStateListe
         final SampleResult result = new SampleResult();
         result.setSampleLabel(Constants.MQTT_SUBSCRIBER_TITLE);
         result.sampleStart();
+        if(null != initException){
+            result.sampleEnd();
+            result.setSuccessful(false);
+            StringWriter stringWriter = new StringWriter();
+            initException.printStackTrace(new PrintWriter(stringWriter));
+            result.setResponseData(stringWriter.toString(), null);
+            result.setResponseMessage("Unable publish messages.\n" + "Exception: " + initException.toString());
+            result.setDataType(SampleResult.TEXT);
+            result.setResponseCode("FAILED");
+            return result;
+        }
+        long start = System.currentTimeMillis();
+        while (true){
+            if(subscirberClient.isCompleted()){
+                result.setSuccessful(true);
+                result.sampleEnd();
+                result.setResponseCode("OK");
+                result.setResponseData(subscirberClient.getReceiveMessage(),"UTF-8");
+                return result;
+            }
+            if(System.currentTimeMillis()-start>1000*10){
+                result.setSuccessful(false);
+                result.sampleEnd();
+                result.setResponseCode("TIMEOUT");
+                return result;
+            }
+            try {
+                Thread.sleep(0);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void threadStarted() {
         if (subscirberClient == null || !subscirberClient.isConnect()) {
             try {
                 initClient();
                 subscirberClient.Connect();
                 subscirberClient.subscribe();
-                        boolean isCompleted = false;
-                        long start = System.currentTimeMillis();
-                        while (!isCompleted){
-                            if(System.currentTimeMillis()-start>1000*10){
-                                result.setSuccessful(false);
-                                result.sampleEnd();
-                                result.setResponseCode("TIMEOUT");
-                                isCompleted = true;
-                            }
-
-                            if(subscirberClient.isCompleted()){
-                                result.setSuccessful(true);
-                                result.sampleEnd();
-                                result.setResponseCode("OK");
-                                isCompleted = true;
-                            }
-                        }
-                        return result;
             } catch (Exception e) {
-                result.sampleEnd();
-                result.setSuccessful(false);
-                StringWriter stringWriter = new StringWriter();
-                e.printStackTrace(new PrintWriter(stringWriter));
-                result.setResponseData(stringWriter.toString(), null);
-                result.setResponseMessage("Unable publish messages.\n" + "Exception: " + e.toString());
-                result.setDataType(org.apache.jmeter.samplers.SampleResult.TEXT);
-                result.setResponseCode("FAILED");
-                return result;
-            }finally {
-                subscirberClient.close();
+                initException = e ;
             }
         }
-        return null;
+    }
+
+    @Override
+    public void threadFinished() {
+        subscirberClient.close();
     }
 }

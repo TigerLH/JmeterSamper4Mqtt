@@ -9,6 +9,7 @@ import com.beecloud.platform.protocol.core.datagram.BaseDataGram;
 import com.beecloud.platform.protocol.core.element.Identity;
 import com.beecloud.platform.protocol.core.header.ApplicationHeader;
 import com.beecloud.platform.protocol.core.message.BaseMessage;
+import com.google.gson.Gson;
 import org.apache.log.util.Closeable;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
@@ -158,6 +159,8 @@ public class ProcessClient implements MqttCallback,Closeable{
 		}
 		Constructor con = MessageType.getMessage(key).getConstructor(byte[].class);
 		Object object = con.newInstance(baseMessage.encode());
+		Gson gson = new Gson();
+		System.out.println(gson.toJson(object));
 		Identity identity = (Identity)object.getClass().getMethod("getIdentity").invoke(object);
 		long sequenceId = applicationHeader.getSequenceId();
 		BaseMessage ackMessage = ActionMapper.getMessage(key).produceAckMessage(sequenceId,identity);

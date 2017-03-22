@@ -29,6 +29,7 @@ public class SubscriberClient implements MqttCallback,Closeable{
 	private String tbox_topic = "  mqtt/vehicle/%s";
 	private ConnectInfo connectInfo;
     private boolean isOver = false;
+	private String receiveMessage = "";
 	public SubscriberClient(ConnectInfo connectInfo){
 		 this.connectInfo = connectInfo;
 	}
@@ -74,7 +75,6 @@ public class SubscriberClient implements MqttCallback,Closeable{
 		return UuidUtil.getUuid();
 	}
 
-
     /**
 	 * 订阅消息
 	 * @throws MqttException
@@ -117,6 +117,10 @@ public class SubscriberClient implements MqttCallback,Closeable{
 		return this.isOver;
 	}
 
+	public String getReceiveMessage(){
+		return this.receiveMessage;
+	}
+
 	@Override
 	public void connectionLost(Throwable throwable) {
 
@@ -144,6 +148,7 @@ public class SubscriberClient implements MqttCallback,Closeable{
 		BaseMessage resultMessage = ActionMapper.getMessage(key).produceResultMessage(sequenceId,identity);
 		this.publish(ackMessage);
 		this.publish(resultMessage);
+		receiveMessage = object.toString();
 		isOver = true;
 	}
 
