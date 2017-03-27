@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: com.beecloud:realtime-platform-common:1.0.0-SNAPSHOT">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/beecloud/realtime-platform-common/1.0.0-SNAPSHOT/realtime-platform-common-1.0.0-20170322.020817-58.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/com/beecloud/realtime-platform-common/1.0.0-SNAPSHOT/realtime-platform-common-1.0.0-20170322.020817-58-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/beecloud/realtime-platform-common/1.0.0-SNAPSHOT/realtime-platform-common-1.0.0-20170322.020817-58-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

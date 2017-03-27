@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: com.beecloud:beecloud-vehicle-spa-common:1.0.0-SNAPSHOT">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/beecloud/beecloud-vehicle-spa-common/1.0.0-SNAPSHOT/beecloud-vehicle-spa-common-1.0.0-20170315.112919-36.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/com/beecloud/beecloud-vehicle-spa-common/1.0.0-SNAPSHOT/beecloud-vehicle-spa-common-1.0.0-20170315.112919-36-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/beecloud/beecloud-vehicle-spa-common/1.0.0-SNAPSHOT/beecloud-vehicle-spa-common-1.0.0-20170315.112919-36-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

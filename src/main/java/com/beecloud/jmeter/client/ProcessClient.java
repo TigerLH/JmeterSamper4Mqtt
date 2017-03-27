@@ -23,13 +23,14 @@ import java.util.List;
  * @description
  * @date 2017/3/6.
  */
-public class ProcessClient implements MqttCallback,Closeable{
+public class ProcessClient extends Thread implements MqttCallback,Closeable{
 	private MqttAsyncClient client = null;
     private String mqtt_server_topic = "mqtt/server";
 	private String tbox_topic = "  mqtt/vehicle/%s";
 	private ConnectInfo connectInfo;
 	private boolean isCompleted = false;
 	private String appMessage = "";
+	private Long StartTime;
 	public ProcessClient(ConnectInfo connectInfo){
 		 this.connectInfo = connectInfo;
 	}
@@ -66,6 +67,35 @@ public class ProcessClient implements MqttCallback,Closeable{
 		}
 	}
 
+
+	@Override
+	public void run() {
+		super.run();
+		this.Connect();
+		try {
+			this.subscribeTbox();
+			this.subscribeApp();
+		} catch (MqttException e) {
+			e.printStackTrace();
+		}
+		this.startRecord();
+		while (true){
+			if(isCompleted()){
+
+			}
+			if(System.currentTimeMillis()-StartTime>1000*10){
+
+			}
+		}
+	}
+
+
+	/**
+	 * 计时开始
+     */
+	public void startRecord(){
+		StartTime = System.currentTimeMillis();
+	}
 
     /**
 	 * UUid做为ClientId
@@ -140,7 +170,7 @@ public class ProcessClient implements MqttCallback,Closeable{
 	@Override
 	public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
 		System.out.println("receive Topic:"+s);
-		System.out.println(s.equals(connectInfo.getAppTopic()));
+//		System.out.println(s.equals(connectInfo.getAppTopic()));
 		if(s.equals(connectInfo.getAppTopic())){
 			appMessage = new String(mqttMessage.getPayload(),"UTF-8");
 			isCompleted = true;

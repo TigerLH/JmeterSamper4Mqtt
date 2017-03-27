@@ -131,7 +131,7 @@ public class ProcessSampler extends AbstractSampler implements TestStateListener
         Gson gson = new Gson();
         AuthObject authObject = gson.fromJson(getVehicle() ,AuthObject.class);
         connectInfo.setAuthObject(authObject);
-        System.out.println(connectInfo);
+        log.debug(connectInfo.toString());
         processClient = new ProcessClient(connectInfo);
     }
 
